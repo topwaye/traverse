@@ -89,7 +89,7 @@ void traverse ( const char * directory )
     intptr_t handle;
 
     strcpy_s ( path, directory );
-    strcat_s ( path, "\\*.php" );
+    strcat_s ( path, "*.php" );
 
     handle = _findfirst64 ( path, &info );
     if ( handle != -1 )
@@ -103,7 +103,6 @@ void traverse ( const char * directory )
             printf ( "%9lld %-36s ", info.size, info.name );
 
             strcpy_s ( path, directory );
-            strcat_s ( path, "\\" );
             strcat_s ( path, info.name );
 
             /* determine whether this is a subdirectory */
@@ -114,11 +113,12 @@ void traverse ( const char * directory )
                 if ( strcmp ( info.name, "." ) == 0 || strcmp ( info.name, ".." ) == 0 )
                     continue;
 
+				strcat_s ( path, "\\" );
                 traverse ( path );
             }
             else
             {
-                do_command ( path );
+				do_command ( path );
             }
 
         } while ( _findnext64 ( handle, &info ) != -1 );
@@ -129,9 +129,12 @@ void traverse ( const char * directory )
 
 int main ( )
 {
-    /* make sure this directory is there, else change accordingly */
-    char path [ MAX_PATH_SIZE ] = "c:\\test";
-    char * buffer = NULL;
+    /* make sure this directory is there */
+	
+	/* a directory must end with '\', distinguished from a file */
+    char path [ MAX_PATH_SIZE ] = "c:\\test\\";
+
+	char * buffer = NULL;
 
     buffer = ( char * ) malloc ( MAX_BUFFER_SIZE + MAX_BUFFER_SIZE );
     if ( ! buffer )
