@@ -19,7 +19,6 @@
 #include <stdlib.h>
 #include <cstring>
 
-#define MAX_PATH_SIZE          4096 /* 4KB */
 #define MAX_BUFFER_SIZE     4194304 /* 4MB */
 
 char * src_buf = NULL;
@@ -84,7 +83,7 @@ void do_command ( const char * filename )
 
 void traverse ( const char * directory )
 {
-    char path [ MAX_PATH_SIZE ];
+    char path [ _MAX_PATH ];
     struct __finddata64_t info;
     intptr_t handle;
 
@@ -132,7 +131,7 @@ int main ( )
     /* make sure this directory is there */
 	
 	/* a directory must end with '\', distinguished from a file */
-    char path [ MAX_PATH_SIZE ] = "c:\\test\\";
+    char path [ _MAX_PATH ] = "c:\\test\\";
 
 	char * buffer = NULL;
 
