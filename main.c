@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <cstring>
 
-#define MAX_BUFFER_SIZE     4194304 /* 4MB */
+#define MAX_FILE_SIZE     4194304 /* 4MB */
 
 char * src_buf = NULL;
 char * dst_buf = NULL;
@@ -27,12 +27,18 @@ char * dst_buf = NULL;
 char pattern [ ] = "function*(*)*{";
 char replace [ ] = "#\n\t\tprintf(\"topwaye: %s: #\\n\", $_SERVER['PHP_SELF']);";
 
+char header [ ] = "<?php printf(\"topwaye: %s\\n\", $_SERVER['PHP_SELF']); ?>\n";
+char footer [ ] = "\n<?php printf(\"topwaye: %s\\n\", $_SERVER['PHP_SELF']); ?>";
+
+int copy_string ( const char * src, char * dst, int dst_size );
 int copy_and_replace ( char * src, int src_len, char * dst, int dst_size );
 
 void do_command ( const char * filename )
 {
 	int fh;
 	int bytes_read, bytes_copied, bytes_written;
+	int size;
+	char * pos;
 
     /* open file for input */
     if ( _sopen_s ( &fh, filename, _O_BINARY | _O_RDWR, _SH_DENYNO, _S_IREAD | _S_IWRITE) )
@@ -42,7 +48,7 @@ void do_command ( const char * filename )
     }
 
     /* read in input */
-    bytes_read = _read ( fh, src_buf, MAX_BUFFER_SIZE );
+    bytes_read = _read ( fh, src_buf, MAX_FILE_SIZE );
     if ( bytes_read == -1 )
     {
         printf ( "problem reading file\n" );
@@ -51,8 +57,18 @@ void do_command ( const char * filename )
     }
 
     printf ( "%u bytes read, ", bytes_read );
-
-	bytes_copied = copy_and_replace ( src_buf, bytes_read, dst_buf, MAX_BUFFER_SIZE );
+	
+	size = MAX_FILE_SIZE;
+	pos = dst_buf;
+	bytes_copied = copy_string ( header, pos, size );
+	pos += bytes_copied;
+	size -= bytes_copied;
+	bytes_copied = copy_and_replace ( src_buf, bytes_read, pos, size );
+	pos += bytes_copied;
+	size -= bytes_copied;
+	bytes_copied = copy_string ( footer, pos, size );
+	size -= bytes_copied;
+	bytes_copied = MAX_FILE_SIZE - size;
 
 	printf ( "%u bytes copied, ", bytes_copied );
 
@@ -63,7 +79,7 @@ void do_command ( const char * filename )
 	if ( _chsize_s ( fh, bytes_copied ) )
 	{
 		printf ( "problem in changing the size\n" );
-		_close(fh);
+		_close ( fh );
 		return;
 	}
 	
@@ -78,7 +94,7 @@ void do_command ( const char * filename )
 
 	printf ( "%u bytes written\n", bytes_written );
 
-    _close(fh);
+    _close ( fh );
 }
 
 void traverse ( const char * directory )
@@ -135,7 +151,7 @@ int main ( )
 
 	char * buffer = NULL;
 
-    buffer = ( char * ) malloc ( MAX_BUFFER_SIZE + MAX_BUFFER_SIZE );
+    buffer = ( char * ) malloc ( MAX_FILE_SIZE + MAX_FILE_SIZE );
     if ( ! buffer )
     {
         printf ( "insufficient memory available\n" );
@@ -143,7 +159,7 @@ int main ( )
     }
 
     src_buf = buffer;
-    dst_buf = buffer + MAX_BUFFER_SIZE;
+    dst_buf = buffer + MAX_FILE_SIZE;
 
     /* list the files... */
     printf ( "listing of files in the directory %s\n\n", path );
@@ -155,6 +171,24 @@ int main ( )
     free ( buffer );
 
     return 0;
+}
+
+int copy_string ( const char * src, char * dst, int dst_size )
+{
+	int h, k;
+
+	h = 0, k = 0;
+	while ( *( src + k ) )
+	{
+		if ( h + 1 == dst_size )
+			return 0;
+
+		*( dst + h ++ ) = *( src + k ++ );
+	}
+
+	*( dst + h ) = 0;
+
+	return h;
 }
 
 int copy_and_replace ( char * src, int src_len, char * dst, int dst_size )
